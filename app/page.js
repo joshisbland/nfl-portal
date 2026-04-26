@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 
 export default function Home() {
   const [players, setPlayers] = useState([]);
+  const [tab, setTab] = useState("portal");
   const [search, setSearch] = useState("");
-  const [position, setPosition] = useState("");
 
   useEffect(() => {
     fetch("/api/players")
@@ -14,39 +14,86 @@ export default function Home() {
   }, []);
 
   const filtered = players.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) &&
-    (!position || p.position === position)
+    p.name?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const rank = (pos) => {
+    const map = { QB: 96, WR: 88, RB: 87, TE: 82 };
+    return map[pos] || 75;
+  };
+
   return (
-    <main className="p-6 text-white">
-      <h1 className="text-3xl font-bold mb-6">NFL Portal Tracker</h1>
+    <div className="min-h-screen bg-[#0b1020] text-white">
 
-      <input
-        placeholder="Search player..."
-        className="p-2 rounded bg-slate-800 mb-4"
-        onChange={e => setSearch(e.target.value)}
-      />
+      {/* HEADER */}
+      <header className="sticky top-0 bg-[#0b1020]/90 backdrop-blur border-b border-white/10 p-4 flex justify-between items-center">
+        <h1 className="font-bold text-xl tracking-wide">NFL PORTAL</h1>
 
-      <select
-        className="p-2 rounded bg-slate-800 mb-6"
-        onChange={e => setPosition(e.target.value)}
-      >
-        <option value="">All Positions</option>
-        <option value="QB">QB</option>
-        <option value="WR">WR</option>
-        <option value="RB">RB</option>
-      </select>
+        <input
+          className="bg-white/5 px-3 py-2 rounded-lg text-sm outline-none w-64"
+          placeholder="Search players..."
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </header>
 
-      <div className="grid gap-4">
-        {filtered.map(player => (
-          <div key={player.id} className="bg-slate-800 p-4 rounded-xl">
-            <h2 className="text-xl">{player.name}</h2>
-            <p>{player.position} • {player.team}</p>
-            <p className="text-sky-400">{player.status}</p>
-          </div>
+      {/* TABS */}
+      <div className="flex gap-6 px-6 pt-4 text-sm">
+        {["portal", "teams", "rankings"].map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`pb-2 border-b-2 transition ${
+              tab === t
+                ? "border-blue-400 text-white"
+                : "border-transparent text-white/50"
+            }`}
+          >
+            {t.toUpperCase()}
+          </button>
         ))}
       </div>
-    </main>
+
+      {/* CONTENT */}
+      <main className="p-6">
+        {tab === "portal" && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map(p => (
+              <div
+                key={p.id}
+                className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="font-semibold">{p.name}</h2>
+                  <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded">
+                    {p.position}
+                  </span>
+                </div>
+
+                <p className="text-white/60 text-sm">{p.team}</p>
+
+                <div className="mt-3 flex justify-between items-center">
+                  <span className="text-xs text-white/40">{p.status}</span>
+                  <span className="text-yellow-400 font-bold">
+                    {rank(p.position)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab === "teams" && (
+          <div className="text-white/70">
+            Try: /teams/giants, /teams/chiefs, /teams/cowboys
+          </div>
+        )}
+
+        {tab === "rankings" && (
+          <div className="text-white/70">
+            Player rankings system coming (we can build sortable tiers next)
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
